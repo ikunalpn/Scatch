@@ -1,21 +1,32 @@
 // models/userModel.js
 const pool = require('../config/db');
 const bcrypt = require('bcrypt');
+// models/userModel.js
+;
 
 const User = {
-    create: async (fullName, email, password, contact, picture) => {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const [result] = await pool.execute(
-            'INSERT INTO Users (FullName, Email, Password, Contact, Picture) VALUES (?, ?, ?, ?, ?)',
-            [fullName, email, hashedPassword, contact, picture]
-        );
-        return result.insertId;
+    create: async (fullName, email, password) => {
+        try {
+            const [result] = await pool.execute(
+                'INSERT INTO Users (FullName, Email, Password) VALUES (?, ?, ?)',
+                [fullName, email, password]
+            );
+            return result.insertId;
+        } catch (error) {
+            if (error.code === 'ER_DUP_ENTRY') {
+                throw new Error('Email already in use.');
+            }
+            throw error;
+        }
     },
     findByEmail: async (email) => {
-        const [rows] = await pool.execute('SELECT * FROM Users WHERE Email = ?', [email]);
-        return rows[0];
+        try {
+            const [rows] = await pool.execute('SELECT * FROM Users WHERE Email = ?', [email]);
+            return rows[0] || null;
+        } catch (error) {
+            throw error;
+        }
     },
-    // Add other user-related database operations here (e.g., update, delete)
 };
 
 module.exports = User;
