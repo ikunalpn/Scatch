@@ -1,34 +1,45 @@
 // app.js
 const express = require('express');
+const path = require('path');
+const dotenv = require('dotenv');
+const pool = require('./config/db'); 
+const expressSession = require("express-session");
+const flash = require("connect-flash");
+
+dotenv.config();
+
+
+const indexRouter = require('./routes/index');
 const ownersRouter = require('./routes/ownersRouter');
 const productsRouter = require('./routes/productsRouter');
 const usersRouter = require('./routes/usersRouter');
-const dotenv = require('dotenv');
-const pool = require('./config/db'); // Import your MySQL connection pool
-
-dotenv.config();
+const cookieParser = require('cookie-parser');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json()); // Parse JSON request bodies
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+app.use(
+    expressSession({
+        resave: false,
+        saveUninitialized: false,
+        secret: process.env.EXPRESS_SESSION_SECRET
+    })
+)
+app.use(flash());
+app.use(express.static(path.join(__dirname, "public")));
+app.set("view engine", "ejs")
+
 
 // Routes
+app.use("/", indexRouter)
 app.use('/owners', ownersRouter);
 app.use('/users', usersRouter);
 app.use('/products', productsRouter);
 
-// Basic route for testing
-app.get('/', (req, res) => {
-    res.send('Welcome to the API');
-});
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).send('Something went wrong!');
-});
 
 // Test the database connection
 async function testDbConnection() {
@@ -40,24 +51,9 @@ async function testDbConnection() {
         console.error('Database connection failed:', error);
     }
 }
-
 testDbConnection();
 
 // Start the server
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
-});
-
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (reason, promise) => {
-    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-    // Application specific logging, throwing an error, or other logic here
-});
-
-// Handle uncaught exceptions
-process.on('uncaughtException', (err) => {
-    console.error('Uncaught Exception:', err);
-    // Perform any necessary cleanup.
-    // Optionally, exit the process.
-    // process.exit(1);
 });

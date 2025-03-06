@@ -20,7 +20,8 @@ const registerUser = async (req, res) => {
         res.cookie("token", token);
 
 
-        res.status(201).json({ message: 'User registered successfully', token: token });
+        // res.status(201).json({ message: 'User registered successfully', token: token });
+        res.redirect("shop");
     } catch (error) {
         if (error.message === 'Email already in use.') {
             res.status(400).json({ message: error.message });
@@ -31,6 +32,45 @@ const registerUser = async (req, res) => {
     }
 };
 
+const loginUser = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        // Find the user by email
+        const user = await userModel.findByEmail(email);
+
+        if (!user) {
+            return res.status(401).json({ message: 'Invalid credentials' });
+        }
+
+        // Compare the provided password with the stored hashed password
+        const passwordMatch = await bcrypt.compare(password, user.Password);
+
+        if (!passwordMatch) {
+            return res.status(401).json({ message: 'Invalid credentials' });
+        }
+
+        // Generate JWT
+        const token = jwt.sign(
+            { userId: user.UserID, email: user.Email },
+            process.env.JWT_SECRET,
+            { expiresIn: '1h' }
+        );
+
+        // res.status(200).json({ message: 'Login successful', token: token });
+        res.redirect("shop");
+    } catch (error) {
+        console.error('Login error:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+const logoutUser = function (req, res) {
+    res.cookie("token", "");
+    res.redirect("/")
+}
 module.exports = {
     registerUser,
+    loginUser,
+    logoutUser
 };

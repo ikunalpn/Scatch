@@ -3,8 +3,8 @@ const router = express.Router();
 const ownerModel = require('../models/ownerModel');
 const bcrypt = require('bcrypt');
 
-router.get("/", function (req, res) {
-    res.send("hey it's working");
+router.get("/admin", function (req, res) {
+    res.render("createproducts")
 })
 
 router.post("/create", async (req, res) => {
